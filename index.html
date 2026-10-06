@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multipath TCP (MPTCP) — Архитектура, преимущества и применение</title>
+    <meta name="description" content="Полный обзор Multipath TCP: как работает, преимущества, поддержка в ОС и RFC 8684.">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --bg: #f8fafc;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --code-bg: #f1f5f9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        /* Header & Navigation */
+        header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+            color: white;
+            padding: 2rem 1rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        nav {
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        nav ul {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            list-style: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0.5rem 1rem;
+        }
+
+        nav li {
+            margin: 0 0.5rem;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--text-light);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        nav a:hover {
+            color: var(--primary);
+            background-color: var(--code-bg);
+        }
+
+        /* Main Content */
+        main {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        section {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            color: var(--primary-dark);
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        p, li {
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        ul, ol {
+            padding-left: 1.5rem;
+        }
+
+        /* Cards / Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .card {
+            background: var(--bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .card h4 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Code / Terminal block */
+        .code-block {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.9rem;
+            margin: 1rem 0;
+        }
+
+        .code-block .comment { color: #64748b; }
+        .code-block .keyword { color: #38bdf8; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border);
+            margin-top: 2rem;
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            header h1 { font-size: 2rem; }
+            nav ul { flex-direction: column; align-items: center; }
+            nav li { margin: 0.2rem 0; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Multipath TCP (MPTCP)</h1>
+    <p>Одновременное использование нескольких путей для повышения пропускной способности, отказоустойчивости и мобильности сетевых соединений.</p>
+</header>
+
+<nav>
+    <ul>
+        <li><a href="#intro">Введение</a></li>
+        <li><a href="#how-it-works">Как это работает</a></li>
+        <li><a href="#benefits">Преимущества</a></li>
+        <li><a href="#use-cases">Применение</a></li>
+        <li><a href="#os-support">Поддержка в ОС</a></li>
+        <li><a href="#resources">Ресурсы</a></li>
+    </ul>
+</nav>
+
+<main>
+    <section id="intro">
+        <h2>Что такое Multipath TCP?</h2>
+        <p><strong>Multipath TCP (MPTCP)</strong> — это расширение стандартного протокола TCP, которое позволяет установить TCP-соединение одновременно по нескольким сетевым путям (интерфейсам). В то время как традиционный TCP ограничивается одним IP-адресом источника и одним IP-адресом назначения, MPTCP может агрегировать несколько подпотоков (subflows).</p>
+        <p>Это решает фундаментальную проблему современного интернета: устройства (особенно мобильные) часто имеют несколько сетевых интерфейсов (например, Wi-Fi и 5G), но стандартный TCP использует только один из них. Если этот интерфейс теряет связь, соединение обрывается.</p>
+    </section>
+
+    <section id="how-it-works">
+        <h2>Архитектура и принцип работы</h2>
+        <p>MPTCP вводит новый уровень абстракции между приложением и сетью. Соединение MPTCP состоит из нескольких обычных TCP-соединений, называемых <strong>подпотоками (subflows)</strong>.</p>
+        
+        <h3>Ключевые концепции:</h3>
+        <ul>
+            <li><strong>Data Sequence Space (DSS):</strong> MPTCP использует глобальное пространство последовательностей на уровне соединения, чтобы гарантировать, что данные, приходящие по разным путям с разной задержкой, будут корректно собраны в правильном порядке для приложения.</li>
+            <li><strong>Subflow Mapping:</strong> Каждый подпоток имеет свое собственное пространство последовательностей TCP, которое маппится на глобальное пространство DSS.</li>
+            <li><strong>MP_CAPABLE и MP_JOIN:</strong> Специальные TCP-опции, используемые для согласования поддержки MPTCP при установке соединения и для добавления новых подпотоков.</li>
+            <li><strong>Fallback:</strong> Если сервер или промежуточное устройство (например, NAT или фаервол) не поддерживает MPTCP, протокол автоматически и прозрачно откатывается к обычному TCP.</li>
+        </ul>
+
+        <div class="code-block">
+            <span class="comment"># Пример проверки поддержки MPTCP в Linux</span><br>
+            $ <span class="keyword">mptcpize</span> run curl https://mptcp.dev<br>
+            <span class="comment"># Или проверка через ss (socket statistics)</span><br>
+            $ <span class="keyword">ss</span> -tMnp
+        </div>
+    </section>
+
+    <section id="benefits">
+        <h2>Преимущества MPTCP</h2>
+        <div class="grid">
+            <div class="card">
+                <h4>📈 Увеличение пропускной способности</h4>
+                <p>Агрегация каналов (например, Wi-Fi + Ethernet или 4G + 5G) позволяет достичь суммарной скорости передачи данных, превышающей возможности одного интерфейса.</p>
+            </div>
+            <div class="card">
+                <h4>🛡️ Отказоустойчивость</h4>
+                <p>Если один из сетевых путей выходит из строя или теряет пакет, MPTCP мгновенно перенаправляет трафик через оставшиеся активные подпотоки без разрыва соединения.</p>
+            </div>
+            <div class="card">
+                <h4>📱 Бесшовная мобильность</h4>
+                <p>Устройство может переключаться между сетями (например, с Wi-Fi на сотовую сеть при выходе из дома) без потери сессии и изменения IP-адреса на уровне приложения.</p>
+            </div>
+            <div class="card">
+                <h4>⚖️ Балансировка нагрузки</h4>
+                <p>Трафик динамически распределяется между доступными путями в зависимости от их текущей загруженности, задержки (RTT) и доступной полосы пропускания.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="use-cases">
+        <h2>Сценарии применения</h2>
+        <ul>
+            <li><strong>Мобильные устройства:</strong> Apple использует MPTCP (под названием "Multipath TCP") в iOS для Siri и FaceTime, чтобы обеспечить стабильный звонок при переходе из зоны Wi-Fi в зону LTE/5G.</li>
+            <li><strong>Центры обработки данных (Data Centers):</strong> Серверы с множественными сетевыми интерфейсами (NIC) используют MPTCP для увеличения пропускной способности "сеал-спайн" (spine-leaf) сетей и отказоустойчивости.</li>
+            <li><strong>Транспорт и IoT:</strong> Поезда, автомобили и удаленные устройства, которые постоянно перемещаются между зонами покрытия разных базовых станций или Wi-Fi точек.</li>
+            <li><strong>Резервирование каналов связи:</strong> Корпоративные маршрутизаторы, использующие MPTCP для объединения DSL, 4G и спутниковых каналов в один надежный туннель.</li>
+        </ul>
+    </section>
+
+    <section id="os-support">
+        <h2>Поддержка в операционных системах</h2>
+        <p>Экосистема MPTCP прошла долгий путь от сторонних патчей до нативной поддержки в ядрах ведущих ОС.</p>
+        <ul>
+            <li><strong>Linux:</strong> Начиная с ядра <strong>5.6</strong> (март 2020), MPTCP поддерживается нативно (upstream). В ядрах 6.x функциональность значительно расширена (поддержка UDP-инкапсуляции, улучшенные алгоритмы scheduler'ов).</li>
+            <li><strong>Apple iOS / macOS:</strong> Apple была одним из пионеров внедрения MPTCP. Поддержка присутствует в iOS (начиная с iOS 11 для Siri) и macOS, хотя реализация имеет проприетарные модификации.</li>
+            <li><strong>Windows:</strong> Microsoft активно работает над внедрением MPTCP. Экспериментальная и частичная поддержка появляется в последних сборках Windows 11, а также используется в специфичных корпоративных сценариях.</li>
+            <li><strong>Android:</strong> Поддержка зависит от версии ядра и вендора. Начиная с новых версий Android, использующих ядра Linux 5.10+, нативная поддержка MPTCP становится доступной.</li>
+        </ul>
+    </section>
+
+    <section id="resources">
+        <h2>Полезные ресурсы и стандарты</h2>
+        <ul>
+            <li><a href="https://datatracker.ietf.org/doc/html/rfc8684" target="_blank">RFC 8684</a> — Официальный стандарт "TCP Extensions for Multipath Operation with Multiple Addresses".</li>
+            <li><a href="https://www.mptcp.dev/" target="_blank">mptcp.dev</a> — Главный ресурс для разработчиков, документация по Linux MPTCP, туториалы и инструменты.</li>
+            <li><a href="https://github.com/multipath-tcp/mptcp" target="_blank">GitHub: multipath-tcp</a> — Репозитории с инструментами, патчами и утилитами для тестирования.</li>
+            <li><a href="https://mptcp.io/" target="_blank">mptcp.io</a> — Информационный портал с новостями, презентациями и ссылками на исследования.</li>
+        </ul>
+    </section>
+</main>
+
+<footer>
+    <p>© 2026 Информационный ресурс по Multipath TCP. Материалы основаны на RFC 8684 и документации ядра Linux.</p>
+</footer>
+
+</body>
+</html>
